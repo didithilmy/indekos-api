@@ -48,12 +48,13 @@ class crawlFirst(scrapy.Spider):
                        'FEED_FORMAT': 'json'}
 
     def parse(self, response):
-        for row in response.css("div.property-content"):
+        for row in response.css("div.bg-white"):
             yield {
                 "id"     : self.index,
                 "nama"   : row.css("div.property-title a.no-change h1::text").get(),
                 "alamat" : row.css("div.property-address::text").get(),
-                "harga"  : row.css("div.property-price a.no-change-grey h3::text").get()
+                "harga"  : row.css("div.property-price a.no-change-grey h3::text").get(),
+                "gambar" : row.css('div.property-img a img::attr(data-src)').get()
             }
             self.index = self.index + 1
 
