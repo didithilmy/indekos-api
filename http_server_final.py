@@ -104,7 +104,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_response(200)
                     self.send_header("Content-type", "application/json")
                     self.end_headers()
-                    id = int(query.split('=')[1])
+                    id = query.split('=')[1]
                     data_custom = next(item for item in data if item["id"] == id)
                     self.wfile.write(json.dumps(data_custom).encode())
                 else :
@@ -131,7 +131,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 param = query.split('=')[0]
                 status = False
                 if param == 'id':
-                    id = int(query.split('=')[1])
+                    id = query.split('=')[1]
                     for i in range(len(data)):
                         if data[i]['id']==id:
                             del data[i]
@@ -197,7 +197,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     put_body = json.loads(str_put_body)
 
                     #proses pencarian ID dan menimpa data dictionary pada Index ID hasil query
-                    id = int(query.split('=')[1])
+                    id = query.split('=')[1]
                     for i in range(len(data)):
                         if data[i]['id']==id:
                             data[i] = put_body
