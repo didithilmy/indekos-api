@@ -11,6 +11,8 @@ from scrapy import signals
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from scrapy.signalmanager import dispatcher
+import random
+import string
 
 
 #import untuk keperluan HTTP Server
@@ -23,11 +25,14 @@ import json
 #import untuk parsing url path
 from urllib.parse import urlparse
 
+#define generator ID
+def randomID(stringLength):
+        letters = string.ascii_letters
+        return ''.join(random.choice(letters) for i in range(stringLength))
 
 #define untuk class Crawler Data dari website infokost.id
 class crawlFirst(scrapy.Spider):
     name = "info"
-    index = 1
 
     def start_requests(self):
         list_web = [
@@ -39,7 +44,7 @@ class crawlFirst(scrapy.Spider):
             ]
         for j in range(len(list_web)):
             url = list_web[j]
-            yield scrapy.Request(url=url, callback=self.parse)    
+            yield scrapy.Request(url=url, meta={'cookiejar':j},callback=self.parse)    
 
         #url = "https://www.infokost.id/search?type=kost&price_type=monthly"
         #yield scrapy.Request(url=url, callback=self.parse)
@@ -50,13 +55,13 @@ class crawlFirst(scrapy.Spider):
     def parse(self, response):
         for row in response.css("div.bg-white"):
             yield {
-                "id"     : self.index,
-                "nama"   : row.css("div.property-title a.no-change h1::text").get(),
-                "alamat" : row.css("div.property-address::text").get(),
-                "harga"  : row.css("div.property-price a.no-change-grey h3::text").get(),
-                "gambar" : row.css('div.property-img a img::attr(data-src)').get()
+                "id"        : randomID(8),
+                "nama"      : row.css("div.property-content div.property-title a.no-change h1::text").get(),
+                "alamat"    : row.css("div.property-content div.property-address::text").get(),
+                "fasilitas" : row.css('div.property-content div.property-facility span::attr(title)').extract(),
+                "harga"     : row.css("div.property-content div.property-price a.no-change-grey h3::text").get(),
+                "gambar"    : row.css('div.property-img a img::attr(data-src)').get()
             }
-            self.index = self.index + 1
 
 #Fungsi spider_results akan melakukan proses crawling dengan class Crawler yang telah dibuat dan menyimpan output dalam satu variabel
 def spider_results():
@@ -72,8 +77,6 @@ def spider_results():
     process.start()
 
     return results
-
-
 
 
 dataInfo = spider_results()
@@ -223,5 +226,3 @@ port = 4040
 with HTTPServer(("",port), RequestHandler) as httpd:
     print("serving at port ",port)
     httpd.serve_forever()
-    
-
