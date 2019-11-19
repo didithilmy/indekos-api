@@ -86,6 +86,10 @@ with open("output_http_server.json","r") as cust_response:
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin','*')
+        SimpleHTTPRequestHandler.end_headers(self)
+    
     def do_GET(self):
         parsed_query = urlparse(self.path)
         path = parsed_query.path
