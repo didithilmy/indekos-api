@@ -82,6 +82,7 @@ def spider_results():
 dataInfo = spider_results()
 
 with open("output_http_server.json","r") as cust_response:
+    print(cust_response)
     data = json.load(cust_response)
 
 
