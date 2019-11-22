@@ -36,7 +36,7 @@ db_host = str(os.getenv("DB_HOST", 'localhost'))
 db_user = str(os.getenv("DB_USER", 'root'))
 db_pass = str(os.getenv("DB_PASS", ''))
 db_name = str(os.getenv("DB_NAME", 'tst_indekos'))
-db = pymysql.connect(db_host, db_user, db_user, db_pass)
+db = pymysql.connect(host=db_host, user=db_user, password=db_pass, db=db_name)
 
 #cursor object
 cursor = db.cursor()
