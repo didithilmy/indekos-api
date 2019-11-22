@@ -6,6 +6,8 @@
 
 
 #import untuk keperluan Crawling Data response
+import os, sys
+
 import scrapy
 from scrapy import signals
 from scrapy.crawler import CrawlerProcess
@@ -30,7 +32,11 @@ from urllib.parse import urlparse
 import pymysql
 
 #connect to MySQL database
-db = pymysql.connect("localhost", "tst", "root", "info_kost")
+db_host = str(os.getenv("DB_HOST", 'localhost'))
+db_user = str(os.getenv("DB_USER", 'root'))
+db_pass = str(os.getenv("DB_PASS", ''))
+db_name = str(os.getenv("DB_NAME", 'tst_indekos'))
+db = pymysql.connect(db_host, db_user, db_user, db_pass)
 
 #cursor object
 cursor = db.cursor()
