@@ -1,15 +1,5 @@
 # HTTP-RESTful-API-Without-Framework
 HTTP Server yang melayani API dengan arsitektur REST berbasis bahasa pemrograman Python 3. API ini melayani penyediaan dan pengelolaan data informasi kost-kostan yang tersedia.  
-  
-Data informasi kost-kostan yang terdapat pada API ini diperoleh dengan melakukan crawling data pada website penyedia jasa informasi pesan kost online yaitu infokost.id. Proses crawling data menggunakan library Scrapy pada Python 3 dan akan selalu dijalankan ketika program HTTP server dimulai, hasil crawling ini disimpan dalam satu file output_http_server.json.(Pada repository ini file output_http_server.json merupakan contoh hasil file yang diproses melalui crawling tersebut)
-
-File http_server_final.py pada repository ini akan melakukan hosting server yang melayani API dengan methods seperti berikut:
-
-LIST      : Menggunakan methods GET untuk mendapat seluruh value pada file output_http_server.json  
-GET       : Menggunakan methods GET untuk mendapat satu record value spesifik berdasar ID pada file output_http_server.json  
-UPDATE    : Menggunakan methods PUT untuk update value pada satu record data spesifik berdasar ID pada file output_http_server.json  
-CREATE    : Menggunakan methods POST untuk membuat satu record value baru dengan ID tertentu pada file output_http_server.json  
-DELETE    : Menggunakan methods DELETE untuk menghapus satu record value spesifik berdasar ID pada file output_http_server.json
 
 Untuk penggunaan methods pada API ini dengan menggunakan ketentuan seperti berikut:
 
