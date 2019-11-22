@@ -25,6 +25,32 @@ import json
 #import untuk parsing url path
 from urllib.parse import urlparse
 
+
+#import untuk keperluan database
+import pymysql
+
+#connect to MySQL database
+db = pymysql.connect("localhost", "tst", "root", "info_kost")
+
+#cursor object
+cursor = db.cursor()
+
+# Drop table if it already exist using execute() method.
+cursor.execute("DROP TABLE IF EXISTS datakost")
+
+# create databases
+databes = """ CREATE TABLE datakost (
+    id CHAR(8) NOT NULL, 
+    nama CHAR(100),
+    alamat CHAR(200),
+    fasilitas CHAR(200),
+    harga CHAR(50),
+    gambar CHAR(200)
+)"""
+
+cursor.execute(databes)
+
+
 #define generator ID
 def randomID(stringLength):
         letters = string.ascii_letters
@@ -45,12 +71,6 @@ class crawlFirst(scrapy.Spider):
         for j in range(len(list_web)):
             url = list_web[j]
             yield scrapy.Request(url=url, meta={'cookiejar':j},callback=self.parse)    
-
-        #url = "https://www.infokost.id/search?type=kost&price_type=monthly"
-        #yield scrapy.Request(url=url, callback=self.parse)
-    
-    custom_settings={ 'FEED_URI': "output_http_server.json",
-                       'FEED_FORMAT': 'json'}
 
     def parse(self, response):
         for row in response.css("div.bg-white"):
@@ -79,10 +99,23 @@ def spider_results():
     return results
 
 
-dataInfo = spider_results()
+data = spider_results()
 
-with open("output_http_server.json","r") as cust_response:
-    data = json.load(cust_response)
+#memecah array of dict menjadi dict singular
+for dict in data:
+    placeholders = ', '.join(['%s'] * len(dict))
+    columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in dict.keys())
+    values = ', '.join('"' + str(x) +'"' for x in dict.values())
+    sql = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('datakost', columns, values)
+    #print(sql)
+    cursor.execute(sql)
+
+db.commit()
+
+
+
+#with open("output_http_server.json","r") as cust_response:
+#    data = json.load(cust_response)
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -100,7 +133,11 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
-                self.wfile.write(json.dumps(data).encode())
+                #query to read table on database
+                getQuery = """SELECT * FROM datakost"""
+                cursor.execute(getQuery)
+                results = (cursor.fetchall())
+                self.wfile.write(json.dumps(results).encode())
             else :
                 #penanganan request dengan query ID
                 param = query.split('=')[0]
@@ -109,8 +146,12 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_header("Content-type", "application/json")
                     self.end_headers()
                     id = query.split('=')[1]
-                    data_custom = next(item for item in data if item["id"] == id)
-                    self.wfile.write(json.dumps(data_custom).encode())
+                    #query to read table on database
+                    getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
+                    cursor.execute(getQuery)
+                    results = (cursor.fetchall())
+                    #data_custom = next(item for item in data if item["id"] == id)
+                    self.wfile.write(json.dumps(results).encode())
                 else :
                     self.send_response(404)
                     self.send_header("Content-type", "text/html")
@@ -136,17 +177,19 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 status = False
                 if param == 'id':
                     id = query.split('=')[1]
-                    for i in range(len(data)):
-                        if data[i]['id']==id:
-                            del data[i]
-                            status = True
-                            break
-                    if status == True :
+                    #query to read table on database
+                    getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
+                    cursor.execute(getQuery)
+                    results = list(cursor.fetchall())
+                    
+                    if results != [] :
                         self.send_response(200)
                         self.send_header("Content-type","text/html")
                         self.end_headers()
-                        with open("output_http_server.json","w") as current_data:
-                            json.dump(data,current_data)
+                        #query to delete table on database
+                        delQuery = """DELETE FROM datakost WHERE id='"""+id+"""'"""
+                        cursor.execute(delQuery)
+                        
                     else :
                         self.send_response(204)
                         self.send_header("Content-type","text/html")
@@ -168,17 +211,19 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             raw_post_body = self.rfile.read(length)
             str_post_body = raw_post_body.decode("utf-8")
             post_body = json.loads(str_post_body)
-            data.append(post_body)
+            #kode untuk melakukan query pada database
+            columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in post_body.keys())
+            values = ', '.join('"' + str(x) +'"' for x in post_body.values())
+            postQuery = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('datakost', columns, values)
+            cursor.execute(postQuery)
             self.send_response(200)
             self.send_header("Content-type","text/html")
             self.end_headers()
-            with open("output_http_server.json","w") as current_data:
-                json.dump(data,current_data)
         else:
             self.send_response(404)
             self.send_header("Content-type", "text/html")
             self.end_headers()  
-
+            
     def do_PUT(self):
         parsed_query = urlparse(self.path)
         path = parsed_query.path
@@ -202,17 +247,22 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     #proses pencarian ID dan menimpa data dictionary pada Index ID hasil query
                     id = query.split('=')[1]
-                    for i in range(len(data)):
-                        if data[i]['id']==id:
-                            data[i] = put_body
-                            status = True
-                            break
-                    if status == True :
+                    #query to read table on database
+                    getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
+                    cursor.execute(getQuery)
+                    results = list(cursor.fetchall())
+                    
+                    
+                    if results != [] :
                         self.send_response(200)
                         self.send_header("Content-type","text/html")
                         self.end_headers()
-                        with open("output_http_server.json","w") as current_data:
-                            json.dump(data,current_data)
+                        print(put_body)
+                        #kode untuk melakukan query pada database
+                        for key in put_body:
+                            putQuery = '''UPDATE datakost SET '''+ key + '''="'''+put_body[key]+'''" WHERE id="'''+id+'''"'''
+                            cursor.execute(putQuery)
+                        
                     else :
                         self.send_response(204)
                         self.send_header("Content-type","text/html")
@@ -224,8 +274,8 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         else :
             self.send_response(404)
             self.send_header("Content-type", "text/html")
-            self.end_headers()  
-
+            self.end_headers()         
+            
 port = 4040
 with HTTPServer(("",port), RequestHandler) as httpd:
     print("serving at port ",port)
