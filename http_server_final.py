@@ -189,6 +189,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                         #query to delete table on database
                         delQuery = """DELETE FROM datakost WHERE id='"""+id+"""'"""
                         cursor.execute(delQuery)
+                        db.commit()
                         
                     else :
                         self.send_response(204)
@@ -216,6 +217,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             values = ', '.join('"' + str(x) +'"' for x in post_body.values())
             postQuery = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('datakost', columns, values)
             cursor.execute(postQuery)
+            db.commit()
             self.send_response(200)
             self.send_header("Content-type","text/html")
             self.end_headers()
@@ -262,7 +264,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                         for key in put_body:
                             putQuery = '''UPDATE datakost SET '''+ key + '''="'''+put_body[key]+'''" WHERE id="'''+id+'''"'''
                             cursor.execute(putQuery)
-                        
+                            db.commit()
                     else :
                         self.send_response(204)
                         self.send_header("Content-type","text/html")
