@@ -47,6 +47,7 @@ cursor.execute("DROP TABLE IF EXISTS datakost")
 # create databases
 databes = """ CREATE TABLE datakost (
     id CHAR(8) NOT NULL,
+    id_pemilik CHAR(20),
     nama CHAR(100),
     alamat CHAR(200),
     fasilitas CHAR(200),
@@ -82,6 +83,7 @@ class crawlFirst(scrapy.Spider):
         for row in response.css("div.bg-white"):
             yield {
                 "id"        : randomID(8),
+                "id_pemilik": "crawl_infokost",
                 "nama"      : row.css("div.property-content div.property-title a.no-change h1::text").get(),
                 "alamat"    : row.css("div.property-content div.property-address::text").get(),
                 "fasilitas" : row.css('div.property-content div.property-facility span::attr(title)').extract(),
@@ -154,6 +156,17 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     id = query.split('=')[1]
                     #query to read table on database
                     getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
+                    cursor.execute(getQuery)
+                    results = (cursor.fetchall())
+                    #data_custom = next(item for item in data if item["id"] == id)
+                    self.wfile.write(json.dumps(results).encode())
+                elif param == 'id_pemilik':
+                    self.send_response(200)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    id_pemilik = query.split('=')[1]
+                    #query to read table on database
+                    getQuery = """SELECT * FROM datakost WHERE id_pemilik='"""+id_pemilik+"""'"""
                     cursor.execute(getQuery)
                     results = (cursor.fetchall())
                     #data_custom = next(item for item in data if item["id"] == id)
