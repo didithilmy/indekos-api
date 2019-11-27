@@ -107,7 +107,9 @@ def spider_results():
     return results
 
 
-data = spider_results()
+#data = spider_results()
+with open("output_http_server.json","r") as cust_response:
+    data = json.load(cust_response)
 
 #memecah array of dict menjadi dict singular
 for dict in data:
