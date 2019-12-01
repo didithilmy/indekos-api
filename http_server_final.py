@@ -121,12 +121,26 @@ for dict in data:
     cursor.execute(sql)
 
 db.commit()
+db.close()
 
 
-
-#with open("output_http_server.json","r") as cust_response:
-#    data = json.load(cust_response)
-
+def request(query, verbose=False):
+    try:
+        db = pymysql.connect(host=db_host, user=db_user, password=db_pass, db=db_name)
+    except Exception:
+        print("Error in MySQL connection")
+    else:
+        cur = db.cursor()
+        try:
+            cur.execute(query)
+        except Exception:
+            print("Error with query: " + query)
+        else:
+            db.commit()
+            result = cur.fetchall()
+            return result
+            #print(result)
+        db.close()
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -135,7 +149,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         
     def do_OPTIONS(self):
         self.send_response(200)
-        #self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
         self.send_header("Access-Control-Allow-Headers", "X-Requested-With")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
@@ -148,39 +161,49 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/info' :
             if query == '' :
                 #penangan request tanpa query
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.end_headers()
                 #query to read table on database
                 getQuery = """SELECT * FROM datakost"""
-                cursor.execute(getQuery)
-                results = (cursor.fetchall())
-                self.wfile.write(json.dumps(results).encode())
+                results = request(getQuery)
+                if(results):
+                    self.send_response(200)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(results).encode())
+                else:
+                    self.send_response(204)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
             else :
                 #penanganan request dengan query ID
                 param = query.split('=')[0]
                 if param == 'id':
-                    self.send_response(200)
-                    self.send_header("Content-type", "application/json")
-                    self.end_headers()
-                    id = query.split('=')[1]
+                   id = query.split('=')[1]
                     #query to read table on database
                     getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
-                    cursor.execute(getQuery)
-                    results = (cursor.fetchall())
-                    #data_custom = next(item for item in data if item["id"] == id)
-                    self.wfile.write(json.dumps(results).encode())
+                    results = request(getQuery)
+                    if(results):
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps(results).encode())
+                    else:
+                        self.send_response(204)
+                        self.send_header("Content-type", "application/json")
+                        self.end_headers()
                 elif param == 'id_pemilik':
-                    self.send_response(200)
-                    self.send_header("Content-type", "application/json")
-                    self.end_headers()
                     id_pemilik = query.split('=')[1]
                     #query to read table on database
                     getQuery = """SELECT * FROM datakost WHERE id_pemilik='"""+id_pemilik+"""'"""
-                    cursor.execute(getQuery)
-                    results = (cursor.fetchall())
-                    #data_custom = next(item for item in data if item["id"] == id)
-                    self.wfile.write(json.dumps(results).encode())
+                    results = request(getQuery)
+                    if(results):
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps(results).encode())
+                    else:
+                        self.send_response(204)
+                        self.send_header("Content-type", "application/json")
+                        self.end_headers()
                 else :
                     self.send_response(404)
                     self.send_header("Content-type", "text/html")
@@ -208,18 +231,15 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     id = query.split('=')[1]
                     #query to read table on database
                     getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
-                    cursor.execute(getQuery)
-                    results = list(cursor.fetchall())
+                    results = list(request(getQuery))
 
                     if results != [] :
+                        #query to delete table on database
+                        delQuery = """DELETE FROM datakost WHERE id='"""+id+"""'"""
+                        request(delQuery)
                         self.send_response(200)
                         self.send_header("Content-type","text/html")
                         self.end_headers()
-                        #query to delete table on database
-                        delQuery = """DELETE FROM datakost WHERE id='"""+id+"""'"""
-                        cursor.execute(delQuery)
-                        db.commit()
-
                     else :
                         self.send_response(204)
                         self.send_header("Content-type","text/html")
@@ -245,8 +265,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in post_body.keys())
             values = ', '.join('"' + str(x) +'"' for x in post_body.values())
             postQuery = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('datakost', columns, values)
-            cursor.execute(postQuery)
-            db.commit()
+            request(postQuery)
             self.send_response(200)
             self.send_header("Content-type","text/html")
             self.end_headers()
@@ -280,8 +299,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     id = query.split('=')[1]
                     #query to read table on database
                     getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
-                    cursor.execute(getQuery)
-                    results = list(cursor.fetchall())
+                    results = list(request(getQuery))
 
 
                     if results != [] :
@@ -292,8 +310,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                         #kode untuk melakukan query pada database
                         for key in put_body:
                             putQuery = '''UPDATE datakost SET '''+ key + '''="'''+put_body[key]+'''" WHERE id="'''+id+'''"'''
-                            cursor.execute(putQuery)
-                            db.commit()
+                            request(putQuery)
                     else :
                         self.send_response(204)
                         self.send_header("Content-type","text/html")
