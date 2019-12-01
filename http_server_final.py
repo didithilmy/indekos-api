@@ -177,7 +177,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 #penanganan request dengan query ID
                 param = query.split('=')[0]
                 if param == 'id':
-                   id = query.split('=')[1]
+                    id = query.split('=')[1]
                     #query to read table on database
                     getQuery = """SELECT * FROM datakost WHERE id='"""+id+"""'"""
                     results = request(getQuery)
